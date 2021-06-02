@@ -262,7 +262,9 @@ class Socks5(BaseProtocol):
         else:
             writer_remote.write(b'\x05\x01\x00')
             assert await reader_remote.read_n(2) == b'\x05\x00'
-        writer_remote.write(b'\x05\x01\x00\x03' + packstr(host_name.encode()) + port.to_bytes(2, 'big'))
+        ip = socket.inet_aton((await asyncio.get_event_loop().getaddrinfo(host_name, port, family=socket.AF_INET))[0][4][0])
+
+        writer_remote.write(b'\x05\x01\x00\x01' + ip + port.to_bytes(2, 'big'))
         assert await reader_remote.read_n(3) == b'\x05\x00\x00'
         header = (await reader_remote.read_n(1))[0]
         await reader_remote.read_n(6 if header == 1 else (18 if header == 4 else (await reader_remote.read_n(1))[0]+2))
